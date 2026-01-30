@@ -6,6 +6,9 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://ink-hz.github.io',
   integrations: [mdx(), sitemap()],
+  server: {
+    port: 80
+  },
   markdown: {
     shikiConfig: {
       theme: 'github-light',
