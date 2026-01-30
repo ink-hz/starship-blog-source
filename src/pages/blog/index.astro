@@ -1,0 +1,89 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const allPosts = await getCollection('blog');
+const sortedPosts = allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<BaseLayout title="博客文章" description="所有技术博客文章">
+  <h1>📚 所有文章</h1>
+  <ul class="post-list">
+    {sortedPosts.map((post) => (
+      <li class="post-item">
+        <a href={`/blog/${post.slug}/`}>
+          <h2>{post.data.title}</h2>
+          <p class="description">{post.data.description}</p>
+          <div class="meta">
+            <time>{post.data.pubDate.toLocaleDateString('zh-CN')}</time>
+            {post.data.tags && (
+              <div class="tags">
+                {post.data.tags.map((tag) => <span class="tag">#{tag}</span>)}
+              </div>
+            )}
+          </div>
+        </a>
+      </li>
+    ))}
+  </ul>
+</BaseLayout>
+
+<style>
+  h1 {
+    margin-bottom: 2rem;
+  }
+
+  .post-list {
+    list-style: none;
+  }
+
+  .post-item {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid rgba(115, 115, 115, 0.3);
+  }
+
+  .post-item:last-child {
+    border-bottom: none;
+  }
+
+  .post-item a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .post-item h2 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent);
+    transition: color 0.3s;
+  }
+
+  .post-item a:hover h2 {
+    color: #fff;
+  }
+
+  .description {
+    color: var(--gray);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+  }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: var(--gray);
+  }
+
+  .tags {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .tag {
+    color: var(--accent);
+  }
+</style>

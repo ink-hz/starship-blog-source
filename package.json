@@ -1,0 +1,19 @@
+{
+  "name": "blog-source",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "黄政的技术博客 - AI × 云原生",
+  "author": "黄政 (Huang Zheng)",
+  "license": "MIT",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "deploy": "astro build && cd dist && git init && git add -A && git commit -m 'Deploy' && git push -f git@github.com:ink-hz/ink-hz.github.io.git main"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4.3.13",
+    "@astrojs/sitemap": "^3.7.0",
+    "astro": "^5.17.1"
+  }
+}

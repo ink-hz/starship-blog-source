@@ -1,0 +1,152 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const allPosts = await getCollection('blog');
+const sortedPosts = allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const recentPosts = sortedPosts.slice(0, 5);
+---
+
+<BaseLayout
+  title="黄政的技术博客 - AI × 云原生"
+  description="专注 AI 应用开发和云原生架构，分享实战经验和技术洞察"
+>
+  <section class="hero">
+    <h2>👋 欢迎来到我的技术博客</h2>
+    <p>
+      我是黄政，拥有 10 年云原生架构经验，现在专注于 <strong>AI × 云原生</strong> 交叉领域。
+      在这里分享我的技术实践、产品思考和成长历程。
+    </p>
+    <div class="cta">
+      <a href="/blog" class="btn-primary">阅读博客</a>
+      <a href="https://github.com/ink-hz" class="btn-secondary" target="_blank">GitHub</a>
+    </div>
+  </section>
+
+  <section class="recent-posts">
+    <h2>📝 最新文章</h2>
+    <ul class="post-list">
+      {recentPosts.map((post) => (
+        <li class="post-item">
+          <a href={`/blog/${post.slug}/`}>
+            <h3>{post.data.title}</h3>
+            <p class="description">{post.data.description}</p>
+            <time>{post.data.pubDate.toLocaleDateString('zh-CN')}</time>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <a href="/blog" class="view-all">查看所有文章 →</a>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    margin: 3rem 0;
+  }
+
+  .hero h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .hero p {
+    font-size: 1.2rem;
+    color: var(--gray);
+    margin-bottom: 2rem;
+    line-height: 1.8;
+  }
+
+  .cta {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .btn-primary, .btn-secondary {
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 217, 255, 0.3);
+  }
+
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .recent-posts {
+    margin-top: 4rem;
+  }
+
+  .recent-posts h2 {
+    margin-bottom: 2rem;
+  }
+
+  .post-list {
+    list-style: none;
+  }
+
+  .post-item {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(115, 115, 115, 0.3);
+  }
+
+  .post-item:last-child {
+    border-bottom: none;
+  }
+
+  .post-item a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .post-item h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent);
+    transition: color 0.3s;
+  }
+
+  .post-item a:hover h3 {
+    color: #fff;
+  }
+
+  .description {
+    color: var(--gray);
+    margin-bottom: 0.5rem;
+  }
+
+  .post-item time {
+    font-size: 0.9rem;
+    color: var(--gray);
+  }
+
+  .view-all {
+    display: inline-block;
+    margin-top: 1rem;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .view-all:hover {
+    text-decoration: underline;
+  }
+</style>

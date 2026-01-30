@@ -1,0 +1,132 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from './BaseLayout.astro';
+
+type Props = CollectionEntry<'blog'>['data'];
+
+const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <article>
+    <div class="hero-image">
+      {heroImage && <img src={heroImage} alt={title} />}
+    </div>
+    <div class="prose">
+      <div class="title">
+        <h1>{title}</h1>
+        <div class="date">
+          <time>{pubDate.toLocaleDateString('zh-CN')}</time>
+          {
+            updatedDate && (
+              <span class="updated">
+                更新于 <time>{updatedDate.toLocaleDateString('zh-CN')}</time>
+              </span>
+            )
+          }
+        </div>
+        {tags && (
+          <div class="tags">
+            {tags.map((tag) => <span class="tag">#{tag}</span>)}
+          </div>
+        )}
+      </div>
+      <hr />
+      <slot />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .hero-image img {
+    width: 100%;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .title {
+    margin-bottom: 2rem;
+  }
+
+  .title h1 {
+    font-size: 2.5rem;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+  }
+
+  .date {
+    color: var(--gray);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  .updated {
+    margin-left: 1rem;
+  }
+
+  .tags {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .tag {
+    color: var(--accent);
+    font-size: 0.9rem;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--gray);
+    margin: 2rem 0;
+  }
+
+  .prose {
+    font-size: 1.1rem;
+  }
+
+  .prose :global(h2) {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+  }
+
+  .prose :global(h3) {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.4rem;
+  }
+
+  .prose :global(p) {
+    margin-bottom: 1rem;
+  }
+
+  .prose :global(code) {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+
+  .prose :global(pre) {
+    background: #1a1a1a;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+
+  .prose :global(pre code) {
+    background: none;
+    padding: 0;
+  }
+
+  .prose :global(a) {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .prose :global(a:hover) {
+    text-decoration: underline;
+  }
+</style>
