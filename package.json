@@ -2,8 +2,8 @@
   "name": "blog-source",
   "version": "1.0.0",
   "type": "module",
-  "description": "黄政的技术博客 - AI × 云原生",
-  "author": "黄政 (Huang Zheng)",
+  "description": "AI 架构实践 - 大规模 AI 应用的架构设计与工程实践",
+  "author": "ink-hz",
   "license": "MIT",
   "scripts": {
     "dev": "astro dev",

@@ -1,15 +1,16 @@
-# 黄政的技术博客 - 源码仓库
+# AI 架构实践 - 源码仓库
 
-> AI × 云原生 | 5年财富自由之路
+> 大规模 AI 应用的架构设计与工程实践
 
 ## 📖 关于
 
-这是我的技术博客源码仓库,使用 [Astro](https://astro.build) 构建,专注于:
+这是一个专注于 AI 架构的技术博客，使用 [Astro](https://astro.build) 构建。内容涵盖:
 
-- **AI 应用开发**: LLM、RAG、Agent
-- **云原生架构**: Kubernetes、Docker、微服务
-- **产品思考**: 从 0 到 1 构建 SaaS 产品
-- **成长记录**: 5 年财富自由实践
+- **LLM 应用开发**: RAG、Agent、Prompt Engineering
+- **分布式训练**: 多机多卡、数据并行、模型并行
+- **推理优化**: 量化、剪枝、蒸馏、KV Cache
+- **云原生部署**: Kubernetes、GPU 调度、弹性伸缩
+- **成本优化**: 资源利用率、Spot 实例、混合部署
 
 ## 🚀 快速开始
 
@@ -66,12 +67,11 @@ tags: ['AI', '云原生']
 
 - **博客**: [ink-hz.github.io](https://ink-hz.github.io)
 - **GitHub**: [@ink-hz](https://github.com/ink-hz)
-- **产品**: [CodeMockLab](https://github.com/ink-hz/CodeMockLab)
 
 ## 📄 许可证
 
-MIT © 黄政
+MIT
 
 ---
 
-**STARSHIP 原则**: 价值创造 × 可规模化 × 长期主义
+**专注**: 大规模 AI 应用的架构设计与工程实践

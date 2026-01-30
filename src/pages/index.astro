@@ -8,19 +8,15 @@ const recentPosts = sortedPosts.slice(0, 5);
 ---
 
 <BaseLayout
-  title="黄政的技术博客 - AI × 云原生"
-  description="专注 AI 应用开发和云原生架构，分享实战经验和技术洞察"
+  title="AI 架构实践 - 大规模 AI 应用的架构设计"
+  description="专注于大规模 AI 应用的架构设计、工程实践和性能优化"
 >
   <section class="hero">
-    <h2>👋 欢迎来到我的技术博客</h2>
-    <p>
-      我是黄政，拥有 10 年云原生架构经验，现在专注于 <strong>AI × 云原生</strong> 交叉领域。
-      在这里分享我的技术实践、产品思考和成长历程。
+    <h1>大规模 AI 应用的架构设计与工程实践</h1>
+    <p class="lead">
+      从 LLM 应用开发、分布式训练、推理优化，到云原生部署与成本优化，
+      分享真实的生产环境经验和架构最佳实践。
     </p>
-    <div class="cta">
-      <a href="/blog" class="btn-primary">阅读博客</a>
-      <a href="https://github.com/ink-hz" class="btn-secondary" target="_blank">GitHub</a>
-    </div>
   </section>
 
   <section class="recent-posts">
@@ -42,19 +38,24 @@ const recentPosts = sortedPosts.slice(0, 5);
 
 <style>
   .hero {
-    margin: 3rem 0;
+    margin: 2rem 0 4rem 0;
+    padding-bottom: 3rem;
+    border-bottom: 1px solid var(--border);
   }
 
-  .hero h2 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
+  .hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+    color: var(--text);
+    font-weight: 700;
   }
 
-  .hero p {
-    font-size: 1.2rem;
+  .lead {
+    font-size: 1.1rem;
     color: var(--gray);
     margin-bottom: 2rem;
-    line-height: 1.8;
+    line-height: 1.7;
   }
 
   .cta {
@@ -72,21 +73,24 @@ const recentPosts = sortedPosts.slice(0, 5);
 
   .btn-primary {
     background: var(--accent);
-    color: var(--bg);
+    color: #ffffff;
   }
 
   .btn-primary:hover {
+    background: var(--accent-hover);
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 217, 255, 0.3);
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.3);
   }
 
   .btn-secondary {
-    background: rgba(255, 255, 255, 0.1);
+    background: transparent;
     color: var(--text);
+    border: 2px solid var(--border);
   }
 
   .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--code-bg);
+    border-color: var(--accent);
   }
 
   .recent-posts {
@@ -104,7 +108,7 @@ const recentPosts = sortedPosts.slice(0, 5);
   .post-item {
     margin-bottom: 2rem;
     padding-bottom: 2rem;
-    border-bottom: 1px solid rgba(115, 115, 115, 0.3);
+    border-bottom: 1px solid var(--border);
   }
 
   .post-item:last-child {
@@ -118,14 +122,15 @@ const recentPosts = sortedPosts.slice(0, 5);
   }
 
   .post-item h3 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     margin-bottom: 0.5rem;
-    color: var(--accent);
+    color: var(--text);
     transition: color 0.3s;
+    font-weight: 600;
   }
 
   .post-item a:hover h3 {
-    color: #fff;
+    color: var(--accent);
   }
 
   .description {
@@ -144,9 +149,11 @@ const recentPosts = sortedPosts.slice(0, 5);
     color: var(--accent);
     text-decoration: none;
     font-weight: 600;
+    transition: color 0.2s;
   }
 
   .view-all:hover {
+    color: var(--accent-hover);
     text-decoration: underline;
   }
 </style>

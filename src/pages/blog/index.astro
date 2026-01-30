@@ -31,6 +31,8 @@ const sortedPosts = allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pu
 <style>
   h1 {
     margin-bottom: 2rem;
+    color: var(--text);
+    font-weight: 700;
   }
 
   .post-list {
@@ -40,7 +42,7 @@ const sortedPosts = allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pu
   .post-item {
     margin-bottom: 2.5rem;
     padding-bottom: 2.5rem;
-    border-bottom: 1px solid rgba(115, 115, 115, 0.3);
+    border-bottom: 1px solid var(--border);
   }
 
   .post-item:last-child {
@@ -54,20 +56,22 @@ const sortedPosts = allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pu
   }
 
   .post-item h2 {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     margin-bottom: 0.5rem;
-    color: var(--accent);
+    color: var(--text);
     transition: color 0.3s;
+    font-weight: 600;
   }
 
   .post-item a:hover h2 {
-    color: #fff;
+    color: var(--accent);
   }
 
   .description {
     color: var(--gray);
     margin-bottom: 1rem;
-    font-size: 1.1rem;
+    font-size: 1rem;
+    line-height: 1.6;
   }
 
   .meta {
@@ -85,5 +89,8 @@ const sortedPosts = allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pu
 
   .tag {
     color: var(--accent);
+    background: var(--code-bg);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
   }
 </style>

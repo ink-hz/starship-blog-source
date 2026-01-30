@@ -18,10 +18,13 @@ const { title, description } = Astro.props;
     <title>{title}</title>
     <style>
       :root {
-        --bg: #0a0a0a;
-        --text: #e5e5e5;
-        --accent: #00d9ff;
-        --gray: #737373;
+        --bg: #ffffff;
+        --text: #1a1a1a;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --gray: #6b7280;
+        --border: #e5e7eb;
+        --code-bg: #f3f4f6;
       }
 
       * {
@@ -35,35 +38,24 @@ const { title, description } = Astro.props;
         background: var(--bg);
         color: var(--text);
         line-height: 1.6;
+        font-size: 16px;
       }
 
       main {
-        max-width: 800px;
+        max-width: 1000px;
         margin: 0 auto;
-        padding: 2rem 1rem;
+        padding: 2rem 2rem;
       }
 
       header {
-        border-bottom: 1px solid var(--gray);
-        padding-bottom: 2rem;
-        margin-bottom: 2rem;
-      }
-
-      h1 {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
-        background: linear-gradient(45deg, var(--accent), #fff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-
-      .subtitle {
-        color: var(--gray);
-        font-size: 1.1rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 1rem;
+        margin-bottom: 3rem;
       }
 
       nav {
-        margin-top: 1rem;
+        display: flex;
+        gap: 2rem;
       }
 
       nav a {
@@ -71,9 +63,11 @@ const { title, description } = Astro.props;
         text-decoration: none;
         margin-right: 1.5rem;
         font-weight: 500;
+        transition: color 0.2s;
       }
 
       nav a:hover {
+        color: var(--accent-hover);
         text-decoration: underline;
       }
     </style>
@@ -81,12 +75,10 @@ const { title, description } = Astro.props;
   <body>
     <main>
       <header>
-        <h1>黄政的技术博客</h1>
-        <p class="subtitle">AI × 云原生 | 5年财富自由之路</p>
         <nav>
           <a href="/">首页</a>
           <a href="/blog">博客</a>
-          <a href="/about">关于</a>
+          <a href="https://github.com/ink-hz" target="_blank">GitHub</a>
         </nav>
       </header>
       <slot />
