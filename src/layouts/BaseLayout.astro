@@ -83,5 +83,74 @@ const { title, description } = Astro.props;
       </header>
       <slot />
     </main>
+
+    <!-- Mermaid.js 客户端渲染 -->
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+      // 初始化 Mermaid - 使用 default 主题以支持内联 style
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',  // default 主题会尊重内联 style 定义
+        flowchart: {
+          useMaxWidth: true,
+          htmlLabels: true,
+          curve: 'basis'
+        },
+        securityLevel: 'loose'  // 允许自定义样式
+      });
+
+      // 等待 DOM 加载完成
+      window.addEventListener('DOMContentLoaded', () => {
+        console.log('开始查找 Mermaid 代码块...');
+
+        // 查找所有可能包含 mermaid 的代码块
+        const codeBlocks = document.querySelectorAll('pre code');
+        console.log('找到代码块数量:', codeBlocks.length);
+
+        let mermaidCount = 0;
+        codeBlocks.forEach((block, index) => {
+          // 检查是否是 mermaid 代码块（通过 class 或内容）
+          const isMermaid = block.className.includes('mermaid') ||
+                           block.className.includes('language-mermaid') ||
+                           block.textContent.trim().startsWith('graph') ||
+                           block.textContent.trim().startsWith('sequenceDiagram') ||
+                           block.textContent.trim().startsWith('classDiagram') ||
+                           block.textContent.trim().startsWith('flowchart');
+
+          if (isMermaid) {
+            mermaidCount++;
+            console.log(`找到 Mermaid 代码块 #${mermaidCount}:`, block.className);
+
+            // 获取 Mermaid 代码
+            const code = block.textContent;
+
+            // 创建一个新的 div 元素来渲染图表
+            const mermaidDiv = document.createElement('div');
+            mermaidDiv.className = 'mermaid';
+            mermaidDiv.textContent = code;
+            mermaidDiv.style.backgroundColor = '#f9f9f9';
+            mermaidDiv.style.padding = '20px';
+            mermaidDiv.style.borderRadius = '8px';
+            mermaidDiv.style.margin = '20px 0';
+
+            // 替换原来的 pre 标签
+            block.parentElement.replaceWith(mermaidDiv);
+          }
+        });
+
+        console.log(`总共找到 ${mermaidCount} 个 Mermaid 代码块`);
+
+        // 运行 Mermaid 渲染
+        if (mermaidCount > 0) {
+          console.log('开始渲染 Mermaid 图表...');
+          mermaid.run().then(() => {
+            console.log('Mermaid 渲染完成!');
+          }).catch(err => {
+            console.error('Mermaid 渲染出错:', err);
+          });
+        }
+      });
+    </script>
   </body>
 </html>
