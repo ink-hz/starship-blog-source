@@ -7,7 +7,8 @@ export default defineConfig({
   site: 'https://ink-hz.github.io',
   integrations: [mdx(), sitemap()],
   server: {
-    port: 80
+    port: 80,
+    host: '0.0.0.0'
   },
   markdown: {
     shikiConfig: {
