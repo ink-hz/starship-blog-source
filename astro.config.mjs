@@ -4,7 +4,7 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://ink-hz.github.io',
+  site: 'https://www.inkbot.cn',
   integrations: [mdx(), sitemap()],
   server: {
     port: 80,
