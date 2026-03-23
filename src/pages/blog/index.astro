@@ -4,13 +4,32 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const allPosts = await getCollection('blog');
 const sortedPosts = allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+// 收集所有 tag 并按出现次数排序
+const tagCount: Record<string, number> = {};
+sortedPosts.forEach(post => {
+  post.data.tags?.forEach(tag => {
+    tagCount[tag] = (tagCount[tag] || 0) + 1;
+  });
+});
+const allTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).map(([tag]) => tag);
 ---
 
 <BaseLayout title="博客文章" description="所有技术博客文章">
   <h1>📚 所有文章</h1>
-  <ul class="post-list">
+
+  <div class="tag-filter">
+    <button class="tag-btn active" data-tag="all">全部 ({sortedPosts.length})</button>
+    {allTags.map(tag => (
+      <button class="tag-btn" data-tag={tag}>
+        {tag} ({tagCount[tag]})
+      </button>
+    ))}
+  </div>
+
+  <ul class="post-list" id="post-list">
     {sortedPosts.map((post) => (
-      <li class="post-item">
+      <li class="post-item" data-tags={post.data.tags?.join(',') ?? ''}>
         <a href={`/blog/${post.slug}/`}>
           <h2>{post.data.title}</h2>
           <p class="description">{post.data.description}</p>
@@ -28,11 +47,61 @@ const sortedPosts = allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pu
   </ul>
 </BaseLayout>
 
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.tag-btn');
+  const items = document.querySelectorAll<HTMLLIElement>('.post-item');
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const tag = btn.dataset.tag!;
+      items.forEach(item => {
+        if (tag === 'all' || item.dataset.tags?.split(',').includes(tag)) {
+          item.style.display = '';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    });
+  });
+</script>
+
 <style>
   h1 {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     color: var(--text);
     font-weight: 700;
+  }
+
+  .tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .tag-btn {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: none;
+    color: var(--gray);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tag-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .tag-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
   }
 
   .post-list {
