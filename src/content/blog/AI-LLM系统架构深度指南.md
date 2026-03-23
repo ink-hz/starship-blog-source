@@ -2,7 +2,7 @@
 title: 'AI/LLM 系统架构深度指南'
 description: '深度解析LLM Agent架构设计（ReAct、Plan-and-Execute、Multi-Agent）、推理优化（vLLM、TensorRT-LLM）、RAG检索增强生成及生产级部署实践，含完整代码示例。'
 pubDate: 2026-03-23
-tags: ['LLM', 'Agent', 'RAG', 'AI架构', '推理优化', '系统设计']
+tags: ['AI技术']
 ---
 # AI/LLM 系统架构深度指南
 

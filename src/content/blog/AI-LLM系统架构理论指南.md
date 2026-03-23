@@ -2,7 +2,7 @@
 title: 'AI-LLM系统架构理论指南'
 description: 'Agent架构模式ReAct/Plan-and-Execute/Multi-Agent、LLM推理优化vLLM/TensorRT、RAG检索增强、模型路由负载均衡及MCP协议完整解析。'
 pubDate: 2026-01-30
-tags: ['LLM', 'Agent', 'RAG', 'vLLM', '推理优化', 'MCP']
+tags: ['AI技术']
 ---
 
 # AI/LLM 系统架构理论指南

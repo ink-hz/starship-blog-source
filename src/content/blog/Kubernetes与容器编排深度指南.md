@@ -2,7 +2,7 @@
 title: 'Kubernetes与容器编排深度指南'
 description: '全面覆盖Kubernetes架构、核心组件（API Server、etcd、Scheduler）、Pod调度、服务网格、存储管理、安全策略及生产运维实践，含丰富代码示例。'
 pubDate: 2026-03-23
-tags: ['Kubernetes', '容器编排', 'DevOps', '云原生', 'Docker']
+tags: ['云原生架构']
 ---
 # Kubernetes与容器编排深度指南
 

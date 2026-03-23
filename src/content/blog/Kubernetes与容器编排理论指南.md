@@ -2,7 +2,7 @@
 title: 'Kubernetes与容器编排理论指南'
 description: 'Kubernetes架构与核心概念完整解析：Control Plane组件、GPU资源调度、多租户隔离、Helm Charts与GitOps等深度理论知识。'
 pubDate: 2026-01-30
-tags: ['Kubernetes', '容器编排', 'GPU调度', '多租户', 'GitOps']
+tags: ['云原生架构']
 ---
 
 # Kubernetes与容器编排理论指南

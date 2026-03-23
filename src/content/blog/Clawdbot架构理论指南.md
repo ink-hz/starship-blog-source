@@ -2,7 +2,7 @@
 title: 'Clawdbot架构理论指南'
 description: '开源本地优先AI助手完整架构解析：Gateway网关设计、Agent引擎、消息应用集成、会话管理机制、隐私安全设计及自托管部署方案。'
 pubDate: 2026-01-30
-tags: ['Clawdbot', 'AI助手', '本地优先', '架构设计', '隐私保护']
+tags: ['AI技术', '云原生架构']
 ---
 
 # Clawdbot 架构理论指南

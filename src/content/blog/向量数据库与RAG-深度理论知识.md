@@ -2,7 +2,7 @@
 title: '向量数据库与RAG深度理论知识'
 description: '向量检索算法HNSW/IVF、Embedding技术、RAG架构原理、混合检索BM25、知识图谱GraphRAG及Pinecone/Weaviate架构解析。'
 pubDate: 2026-01-30
-tags: ['向量数据库', 'RAG', 'HNSW', 'Embedding', '知识图谱']
+tags: ['AI技术']
 ---
 
 # 向量数据库与RAG深度理论知识
