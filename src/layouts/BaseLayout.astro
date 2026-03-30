@@ -18,13 +18,15 @@ const { title, description } = Astro.props;
     <title>{title}</title>
     <style>
       :root {
-        --bg: #ffffff;
-        --text: #1a1a1a;
-        --accent: #2563eb;
-        --accent-hover: #1d4ed8;
-        --gray: #6b7280;
-        --border: #e5e7eb;
-        --code-bg: #f3f4f6;
+        --bg: #0a0a0f;
+        --text: #e0e0e8;
+        --accent: #00f0ff;
+        --accent-hover: #00c8d6;
+        --gray: #8888a0;
+        --border: #1e1e2e;
+        --code-bg: #12121e;
+        --glow: 0 0 10px rgba(0, 240, 255, 0.3);
+        --surface: #111120;
       }
 
       * {
@@ -36,6 +38,10 @@ const { title, description } = Astro.props;
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         background: var(--bg);
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 40px 40px;
         color: var(--text);
         line-height: 1.6;
         font-size: 16px;
@@ -63,12 +69,12 @@ const { title, description } = Astro.props;
         text-decoration: none;
         margin-right: 1.5rem;
         font-weight: 500;
-        transition: color 0.2s;
+        transition: all 0.3s;
       }
 
       nav a:hover {
         color: var(--accent-hover);
-        text-decoration: underline;
+        text-shadow: var(--glow);
       }
 
       footer {
@@ -88,7 +94,7 @@ const { title, description } = Astro.props;
       }
 
       footer a:hover {
-        text-decoration: underline;
+        text-shadow: var(--glow);
       }
     </style>
   </head>
@@ -119,7 +125,7 @@ const { title, description } = Astro.props;
       // 初始化 Mermaid - 使用 default 主题以支持内联 style
       mermaid.initialize({
         startOnLoad: false,
-        theme: 'default',  // default 主题会尊重内联 style 定义
+        theme: 'dark',  // dark 主题适配暗色背景
         flowchart: {
           useMaxWidth: true,
           htmlLabels: true,
@@ -157,7 +163,7 @@ const { title, description } = Astro.props;
             const mermaidDiv = document.createElement('div');
             mermaidDiv.className = 'mermaid';
             mermaidDiv.textContent = code;
-            mermaidDiv.style.backgroundColor = '#f9f9f9';
+            mermaidDiv.style.backgroundColor = '#111120';
             mermaidDiv.style.padding = '20px';
             mermaidDiv.style.borderRadius = '8px';
             mermaidDiv.style.margin = '20px 0';

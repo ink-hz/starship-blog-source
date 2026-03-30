@@ -88,22 +88,25 @@ const allTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).map(([tag])
     padding: 0.3rem 0.8rem;
     border: 1px solid var(--border);
     border-radius: 20px;
-    background: none;
+    background: var(--surface);
     color: var(--gray);
     font-size: 0.875rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s;
   }
 
   .tag-btn:hover {
     border-color: var(--accent);
     color: var(--accent);
+    box-shadow: var(--glow);
   }
 
   .tag-btn.active {
-    background: var(--accent);
+    background: transparent;
     border-color: var(--accent);
-    color: white;
+    color: var(--accent);
+    box-shadow: var(--glow);
+    text-shadow: var(--glow);
   }
 
   .post-list {
@@ -111,13 +114,21 @@ const allTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).map(([tag])
   }
 
   .post-item {
-    margin-bottom: 2.5rem;
-    padding-bottom: 2.5rem;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    transition: all 0.3s;
   }
 
   .post-item:last-child {
-    border-bottom: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .post-item:hover {
+    border-color: var(--accent);
+    box-shadow: var(--glow);
   }
 
   .post-item a {
