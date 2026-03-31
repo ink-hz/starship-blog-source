@@ -43,7 +43,7 @@ const recentPosts = sortedPosts.slice(0, 5);
   .hero {
     position: relative;
     margin: 2rem 0 4rem 0;
-    padding: 4rem 0;
+    padding: 6rem 0;
     border-bottom: 1px solid var(--border);
     overflow: hidden;
   }
@@ -53,26 +53,32 @@ const recentPosts = sortedPosts.slice(0, 5);
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 400px;
-    height: 400px;
+    width: 150vw;
+    height: 150vh;
     background: radial-gradient(
       circle at center,
       #000 0%,
-      #000 25%,
-      #06b6d4 40%,
-      #3b82f6 55%,
-      #8b5cf6 70%,
-      transparent 100%
+      #000 15%,
+      #06b6d4 25%,
+      #3b82f6 35%,
+      #8b5cf6 45%,
+      rgba(139, 92, 246, 0.3) 60%,
+      transparent 80%
     );
-    opacity: 0.15;
-    animation: blackholeRotate 20s linear infinite;
+    opacity: 0.25;
+    animation: blackholeRotate 30s linear infinite, blackholePulse 8s ease-in-out infinite;
     pointer-events: none;
     z-index: 0;
   }
 
   @keyframes blackholeRotate {
-    from { transform: translate(-50%, -50%) rotate(0deg); }
-    to { transform: translate(-50%, -50%) rotate(360deg); }
+    from { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+    to { transform: translate(-50%, -50%) rotate(360deg) scale(1); }
+  }
+
+  @keyframes blackholePulse {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 0.35; }
   }
 
   .hero h1, .hero .lead {
@@ -89,6 +95,12 @@ const recentPosts = sortedPosts.slice(0, 5);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    animation: titleGlow 4s ease-in-out infinite;
+  }
+
+  @keyframes titleGlow {
+    0%, 100% { filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.3)); }
+    50% { filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5)); }
   }
 
   .lead {
