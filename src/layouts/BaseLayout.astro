@@ -18,15 +18,15 @@ const { title, description } = Astro.props;
     <title>{title}</title>
     <style>
       :root {
-        --bg: #0d1117;
-        --text: #e6edf3;
-        --accent: #58a6ff;
-        --accent-hover: #1f6feb;
-        --gray: #8b949e;
-        --border: #30363d;
-        --code-bg: #161b22;
-        --glow: 0 0 10px rgba(88, 166, 255, 0.3);
-        --surface: #161b22;
+        --bg: #ffffff;
+        --text: #24292f;
+        --accent: #0969da;
+        --accent-hover: #0550ae;
+        --gray: #57606a;
+        --border: #d0d7de;
+        --code-bg: #f6f8fa;
+        --glow: 0 0 10px rgba(9, 105, 218, 0.2);
+        --surface: #f6f8fa;
       }
 
       * {
@@ -125,7 +125,7 @@ const { title, description } = Astro.props;
       // 初始化 Mermaid - 使用 default 主题以支持内联 style
       mermaid.initialize({
         startOnLoad: false,
-        theme: 'dark',  // dark 主题适配暗色背景
+        theme: 'default',  // default 主题适配亮色背景
         flowchart: {
           useMaxWidth: true,
           htmlLabels: true,
@@ -163,7 +163,7 @@ const { title, description } = Astro.props;
             const mermaidDiv = document.createElement('div');
             mermaidDiv.className = 'mermaid';
             mermaidDiv.textContent = code;
-            mermaidDiv.style.backgroundColor = '#161b22';
+            mermaidDiv.style.backgroundColor = '#f6f8fa';
             mermaidDiv.style.padding = '20px';
             mermaidDiv.style.borderRadius = '8px';
             mermaidDiv.style.margin = '20px 0';
