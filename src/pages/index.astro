@@ -14,7 +14,6 @@ const recentPosts = sortedPosts.slice(0, 5);
   description="专注于大规模 AI 应用的架构设计、工程实践和性能优化"
 >
   <section class="hero">
-    <div class="blackhole-bg"></div>
     <h1>大规模 AI 应用的架构设计与工程实践</h1>
     <p class="lead">
       从 LLM 应用开发、分布式训练、推理优化，到云原生部署与成本优化，
@@ -41,49 +40,9 @@ const recentPosts = sortedPosts.slice(0, 5);
 
 <style>
   .hero {
-    position: relative;
     margin: 2rem 0 4rem 0;
-    padding: 6rem 0;
+    padding: 4rem 0;
     border-bottom: 1px solid var(--border);
-    overflow: hidden;
-  }
-
-  .blackhole-bg {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 150vw;
-    height: 150vh;
-    background: radial-gradient(
-      circle at center,
-      #000 0%,
-      #000 15%,
-      #06b6d4 25%,
-      #3b82f6 35%,
-      #8b5cf6 45%,
-      rgba(139, 92, 246, 0.3) 60%,
-      transparent 80%
-    );
-    opacity: 0.25;
-    animation: blackholeRotate 30s linear infinite, blackholePulse 8s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  @keyframes blackholeRotate {
-    from { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
-    to { transform: translate(-50%, -50%) rotate(360deg) scale(1); }
-  }
-
-  @keyframes blackholePulse {
-    0%, 100% { opacity: 0.25; }
-    50% { opacity: 0.35; }
-  }
-
-  .hero h1, .hero .lead {
-    position: relative;
-    z-index: 1;
   }
 
   .hero h1 {
