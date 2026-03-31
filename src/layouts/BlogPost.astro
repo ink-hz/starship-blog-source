@@ -115,7 +115,7 @@ const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.prop
 
   .prose :global(code) {
     background: var(--code-bg);
-    color: #00ff88;
+    color: #79c0ff;
     padding: 0.2rem 0.4rem;
     border-radius: 4px;
     font-size: 0.9em;
@@ -171,5 +171,39 @@ const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.prop
     background: var(--surface);
     padding: 1rem;
     border-radius: 0 8px 8px 0;
+  }
+
+  .prose :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .prose :global(th) {
+    background: var(--code-bg);
+    color: var(--text);
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .prose :global(td) {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .prose :global(tr:last-child td) {
+    border-bottom: none;
+  }
+
+  .prose :global(hr) {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
   }
 </style>
