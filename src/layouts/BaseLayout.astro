@@ -18,15 +18,15 @@ const { title, description } = Astro.props;
     <title>{title}</title>
     <style>
       :root {
-        --bg: #0a0a0f;
+        --bg: #1a1a2e;
         --text: #e0e0e8;
         --accent: #00f0ff;
         --accent-hover: #00c8d6;
         --gray: #8888a0;
-        --border: #1e1e2e;
-        --code-bg: #12121e;
+        --border: #2e2e3e;
+        --code-bg: #1e1e2e;
         --glow: 0 0 10px rgba(0, 240, 255, 0.3);
-        --surface: #111120;
+        --surface: #1e1e2e;
       }
 
       * {
@@ -163,7 +163,7 @@ const { title, description } = Astro.props;
             const mermaidDiv = document.createElement('div');
             mermaidDiv.className = 'mermaid';
             mermaidDiv.textContent = code;
-            mermaidDiv.style.backgroundColor = '#111120';
+            mermaidDiv.style.backgroundColor = '#1e1e2e';
             mermaidDiv.style.padding = '20px';
             mermaidDiv.style.borderRadius = '8px';
             mermaidDiv.style.margin = '20px 0';
