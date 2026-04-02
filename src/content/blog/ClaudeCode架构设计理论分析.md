@@ -726,7 +726,457 @@ MCP配置中支持的变量：
 
 ---
 
-## 九、官方插件架构模式参考
+## 九、Task系统——后台Agent的并行执行引擎
+
+这是Claude Code中一个完整的后台任务管理系统，本质是**在后台启动独立的Agent循环**，支持多Agent并行执行和协调。
+
+### 9.1 Task生命周期
+
+```
+TaskCreate（创建任务）
+    │
+    │  参数：subject, description, activeForm, metadata
+    │  返回：taskId
+    │
+    ▼
+pending（等待中）
+    │
+    │  TaskUpdate(taskId, status: "in_progress")
+    │
+    ▼
+in_progress（执行中）
+    │
+    │  后台Agent循环独立运行
+    │  TaskOutput(taskId) 读取实时输出
+    │  TaskStop(taskId) 可强制终止
+    │
+    ├─ 成功 → TaskUpdate(taskId, status: "completed")
+    │
+    └─ 异常 → 保持 in_progress，创建新Task描述blocker
+    │
+    ▼
+completed / deleted
+    │
+    │  TaskList() 查看全局状态
+    │  返回：token_count, tool_uses, duration_ms
+```
+
+### 9.2 Task工具族
+
+| 工具 | 职责 | 关键参数 |
+|------|------|---------|
+| **TaskCreate** | 创建后台任务 | subject, description, activeForm |
+| **TaskUpdate** | 更新状态/依赖 | status, addBlocks, addBlockedBy, owner |
+| **TaskGet** | 读取任务详情 | taskId |
+| **TaskList** | 列出所有任务 | — |
+| **TaskOutput** | 读取后台输出 | taskId, block(是否阻塞等待), timeout |
+| **TaskStop** | 终止运行中任务 | taskId |
+
+### 9.3 任务依赖与编排
+
+Task系统支持声明式的依赖关系：
+
+```
+TaskCreate("设计API接口")         → taskId: 1
+TaskCreate("实现API接口")         → taskId: 2
+TaskCreate("编写API测试")         → taskId: 3
+
+TaskUpdate(taskId: 2, addBlockedBy: ["1"])    ← 2依赖1
+TaskUpdate(taskId: 3, addBlockedBy: ["2"])    ← 3依赖2
+
+结果：1 → 2 → 3 串行执行
+```
+
+**与Agent子循环的区别**：SubAgent在主循环内执行，共享会话上下文；Task在后台独立运行，有自己的Agent循环、token统计和超时管理。Task更适合**长时间运行、可并行、需要监控**的任务。
+
+---
+
+## 十、Memory系统——跨会话的持久化知识库
+
+Memory不是上下文管理的一部分——它是**跨会话的长期记忆**，每次新会话自动加载，持续增量更新。
+
+### 10.1 Memory架构
+
+```
+~/.claude/projects/<project-hash>/memory/
+├── MEMORY.md                    ← 索引文件（指针，非内容）
+├── user_role.md                 ← 用户信息记忆
+├── feedback_testing.md          ← 行为反馈记忆
+├── project_auth_rewrite.md      ← 项目记忆
+└── reference_linear.md          ← 外部引用记忆
+```
+
+### 10.2 四种记忆类型
+
+| 类型 | 存什么 | 何时存 | 怎么用 |
+|------|-------|-------|-------|
+| **user** | 用户角色、偏好、知识背景 | 学到用户信息时 | 定制回答方式和深度 |
+| **feedback** | 用户对行为的纠正和确认 | 用户纠正或确认做法时 | 避免重复犯错，保持已验证的做法 |
+| **project** | 在进的工作、截止日期、决策 | 学到项目状态时 | 理解任务背景和优先级 |
+| **reference** | 外部系统的位置和用途 | 学到外部资源时 | 知道去哪里找信息 |
+
+### 10.3 记忆文件格式
+
+```markdown
+---
+name: 测试偏好
+description: 用户要求集成测试使用真实数据库而非mock
+type: feedback
+---
+
+集成测试必须连接真实数据库，不使用mock。
+
+**Why:** 上季度mock测试通过但生产迁移失败，mock与真实行为有偏差。
+
+**How to apply:** 写测试时默认使用测试数据库连接，除非用户明确要求mock。
+```
+
+### 10.4 加载与限制
+
+```
+SessionStart
+    │
+    ▼
+自动加载 MEMORY.md 索引到上下文
+    │
+    ├─ 大小限制：25KB 截断
+    ├─ 行数限制：200行截断
+    └─ MEMORY.md只存指针，不存内容
+    │
+    ▼
+Agent按需读取具体记忆文件
+```
+
+**MEMORY.md是索引，不是记忆本身。** 这个设计避免了所有记忆一次性挤占上下文窗口——Agent先看索引决定需要哪些记忆，再按需读取。
+
+**什么不该存进Memory**：代码模式（读代码就行）、git历史（git log就行）、调试方案（修复在代码里）、CLAUDE.md已有的内容、临时性的任务状态。
+
+---
+
+## 十一、多层缓存策略——Token经济学的工程实现
+
+Claude Code的每个设计决策都有token成本评估。缓存是控制成本的核心基础设施，分五层递进：
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  L5: 会话级缓存                                             │
+│  · Remote session 24h持久化                                 │
+│  · JSONL transcript 持久化到 ~/.claude/sessions/            │
+│  · --resume 恢复时直接加载，不重新推理                        │
+├────────────────────────────────────────────────────────────┤
+│  L4: MCP缓存                                               │
+│  · 工具列表缓存（服务器连接后一次性获取）                      │
+│  · 服务器连接复用（避免重复握手）                              │
+│  · ToolSearch延迟加载（不活跃的MCP工具不占token）              │
+├────────────────────────────────────────────────────────────┤
+│  L3: Skill缓存                                              │
+│  · L1元数据常驻内存（~100字/skill）                           │
+│  · L2 SKILL.md条件加载（触发时才进入上下文）                   │
+│  · L3 references按需读取（Agent显式请求时）                   │
+│  · description限制250字符                                    │
+├────────────────────────────────────────────────────────────┤
+│  L2: Prompt缓存                                             │
+│  · 系统提示缓存（不变部分跨turn复用）                         │
+│  · CLAUDE.md文件缓存（项目不变则缓存命中）                    │
+│  · @-mention文件不JSON转义（减少序列化开销）                   │
+├────────────────────────────────────────────────────────────┤
+│  L1: 工具Schema缓存                                         │
+│  · 工具定义JSON per-session缓存（避免每turn重新stringify）    │
+│  · MCP工具schema在连接时一次性缓存                            │
+│  · 动态工具变更时才invalidate                                │
+└────────────────────────────────────────────────────────────┘
+```
+
+### Token节省的关键技术点
+
+| 技术 | 节省方式 | 预估节省 |
+|------|---------|---------|
+| Skill三级加载 | 避免全部Skill内容挤占上下文 | 每Skill节省~5000 token |
+| ToolSearch延迟加载 | 不活跃MCP工具不占token | 大型MCP生态下节省数万token |
+| @-mention不转义 | 原始字符串替代JSON转义 | 大文件减少10-30% |
+| Read compact行号 | 紧凑的行号格式 | 长文件减少5-10% |
+| 工具schema缓存 | 避免每turn重新序列化 | 每turn节省~1000 token |
+| 自动紧凑 | 压缩非关键消息 | 长会话可释放50%+上下文 |
+
+---
+
+## 十二、容错与恢复——Graceful Degradation设计哲学
+
+Claude Code的容错策略不是Fail-Fast（快速失败），而是**Fail-Safe（安全降级）**——优先保持会话连续性，能恢复的绝不中断。
+
+### 12.1 容错机制全景
+
+```
+┌─── 场景 ──────────────────── 策略 ──────────────────── 目标 ───┐
+│                                                                 │
+│  Image处理失败            → 自动剥离image blocks      → 不中断对话 │
+│  Diff渲染超时             → 5秒后fallback到纯文本     → 不阻塞流程 │
+│  Autocompact连续3次失败   → 停止并报可操作错误        → 不烧费API  │
+│  MCP服务器断连            → 工具标记不可用+重试       → 不影响其他 │
+│  Streaming idle 90s       → 可配timeout+graceful close → 不挂起   │
+│  子进程环境泄露            → SCRUB=1清除云凭证        → 不泄密    │
+│  SSH连接断开              → 会话持久化+resume恢复     → 不丢进度  │
+│  大会话(>50MB)             → 消息自动删除+压缩       → 不OOM     │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 12.2 会话恢复机制
+
+```
+正常会话
+    │
+    ├─ 中断（网络断开/终端关闭/SSH断连）
+    │   └─ 会话状态已持久化到 ~/.claude/sessions/*.jsonl
+    │       └─ claude --resume → 恢复完整上下文
+    │
+    ├─ 权限阻塞（headless模式下需要确认）
+    │   └─ Deferred权限决策 → 工具调用处暂停
+    │       └─ claude -p --resume → 重新评估权限并继续
+    │
+    └─ Compact失败（上下文溢出）
+        └─ 检测抖动循环（3次紧凑后仍超限）
+            └─ 停止并显示可操作错误（而非无限重试）
+```
+
+**关键原则：`--resume`是一等特性，不是事后补丁。** 所有设计都假设会话可能在任何时刻中断，因此每一步都保证可恢复。
+
+---
+
+## 十三、完整Hook事件清单——不止九个
+
+文章前面介绍了9个核心Hook，但实际系统支持更多事件。完整清单：
+
+| 事件 | 触发时机 | 支持的Hook类型 | 关键用途 |
+|------|---------|---------------|---------|
+| **SessionStart** | 会话初始化 | command | 项目检测、上下文预加载 |
+| **SessionEnd** | 会话结束 | command | 状态保存、清理（1.5s超时，可配） |
+| **UserPromptSubmit** | 用户输入后 | prompt/command | 输入验证、规则注入 |
+| **PreToolUse** | 工具执行前 | prompt/command | 安全检查、权限验证、输入修改 |
+| **PostToolUse** | 工具执行后 | prompt/command | 结果处理、日志记录 |
+| **PreCompact** | 上下文压缩前 | command | 保留关键信息 |
+| **Stop** | 主Agent尝试退出 | prompt/command | 完成检查、自迭代驱动 |
+| **SubagentStop** | 子Agent完成 | prompt/command | 质量检查 |
+| **Notification** | 系统通知 | command | 事件路由、外部告警 |
+| **PermissionDenied** | 权限被自动拒绝 | command | 可返回`{retry: true}`让模型重试 |
+| **CwdChanged** | 工作目录切换 | command | direnv集成、环境自动加载 |
+| **FileChanged** | 文件变动 | command | 响应式工作流 |
+| **TaskCreated** | 任务创建时 | command | 任务拦截和增强 |
+| **TeammateIdle** | 团队Agent空闲 | command | 多Agent协作调度 |
+| **TaskCompleted** | 任务完成时 | command | 清理、通知、后续触发 |
+
+### Hook条件执行（if字段）
+
+Hook不一定每次都执行。`if`字段支持条件匹配，减少不必要的进程开销：
+
+```
+{
+  "PreToolUse": [
+    {
+      "matcher": "Bash",
+      "if": "Bash(git *)",              ← 仅git命令时才执行此Hook
+      "hooks": [
+        {"type": "command", "command": "bash validate-git.sh"}
+      ]
+    }
+  ]
+}
+```
+
+### Hook输出大小控制
+
+当Hook输出超过50KB时，系统不会将全部内容注入上下文（避免token浪费），而是保存到文件并在上下文中插入文件路径+预览摘要。
+
+---
+
+## 十四、工具系统深度设计——每个工具的职责边界
+
+### 14.1 工具能力矩阵
+
+| 工具 | 副作用 | 默认权限 | 特殊能力 |
+|------|-------|---------|---------|
+| **Read** | 无 | allow | PDF(限20页)、Jupyter、图片、行号范围 |
+| **Write** | 创建/覆盖文件 | ask | 必须先Read才能Write已有文件 |
+| **Edit** | 修改文件片段 | ask | 精确字符串替换、replace_all模式 |
+| **Bash** | 执行任意命令 | ask | 沙箱隔离、超时控制、后台执行 |
+| **Grep** | 无 | allow | ripgrep引擎、多行匹配、行号、head_limit |
+| **Glob** | 无 | allow | 文件模式匹配、按修改时间排序 |
+| **WebFetch** | 无 | ask | 15分钟缓存、HTML→Markdown、域名过滤 |
+| **WebSearch** | 无 | ask | 域名白名单/黑名单 |
+| **Agent** | 启动子Agent | allow | model覆盖、worktree隔离、后台执行 |
+| **Skill** | 无 | allow | 加载Skill知识到上下文 |
+
+### 14.2 Bash工具的沙箱细节
+
+Bash是唯一支持沙箱隔离的工具，隔离维度：
+
+```
+┌─ 网络隔离 ────────────────────────────────────────┐
+│  allowLocalBinding: false     ← 禁止监听本地端口   │
+│  allowAllUnixSockets: false   ← 禁止Unix Socket    │
+│  allowedDomains: [...]        ← 域名白名单          │
+│  httpProxyPort / socksProxyPort ← 代理限制          │
+├─ 进程隔离 ────────────────────────────────────────┤
+│  excludedCommands: [...]      ← 排除特定危险命令    │
+│  allowUnsandboxedCommands: false ← 禁止逃逸沙箱    │
+│  CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1 ← 清除子进程凭证│
+├─ 行为限制 ────────────────────────────────────────┤
+│  timeout: 120000ms（默认）     ← 2分钟超时          │
+│  run_in_background: true      ← 支持后台执行        │
+│  后台任务 ~45s无响应弹通知                           │
+└───────────────────────────────────────────────────┘
+```
+
+**重要限制：沙箱仅适用于Bash。** Read、Write、WebFetch、MCP工具不经过沙箱。这意味着安全防线的完整性依赖于五层模型的协同，而非单靠沙箱。
+
+---
+
+## 十五、多模型策略——Effort参数与Extended Thinking
+
+Claude Code不是只用一个模型，而是根据任务复杂度动态调整推理深度。
+
+### 15.1 Effort三档推理
+
+| Effort | 推理深度 | 适用场景 | Token消耗 |
+|--------|---------|---------|----------|
+| **low** | 快速回复，最少思考 | 简单问题、文件读取、格式化 | 最低 |
+| **medium** | 平衡速度和质量 | 常规编码、代码审查 | 中等 |
+| **high** | 深度思考，完整推理链 | 架构决策、复杂bug定位、安全分析 | 最高 |
+
+### 15.2 Extended Thinking（自适应思考）
+
+```
+用户输入
+    │
+    ▼
+模型能力检测
+    ├─ 模型支持Extended Thinking → 自适应启用
+    │   └─ 简单任务 → 自动跳过思考
+    │   └─ 复杂任务 → 显示思考过程（thinking block）
+    │
+    └─ 模型不支持 → 标准推理
+```
+
+**`ultrathink`关键字**：在提示中包含此关键字，强制激活最深度的思考模式。适用于需要极致推理能力的场景（如复杂的并发bug、分布式一致性问题）。
+
+### 15.3 多后端模型映射
+
+Claude Code不绑定单一API，支持多个云后端：
+
+| 后端 | 认证方式 | 特殊适配 |
+|------|---------|---------|
+| **Anthropic API** | API Key | 默认，全特性支持 |
+| **AWS Bedrock** | SDK Profile | 冷启动优化、ARN映射 |
+| **Google Vertex** | Service Account | Fine-grained streaming |
+| **Microsoft Foundry** | API Token | 推理profile映射 |
+
+`modelOverrides`配置允许将picker中的模型名映射到具体的后端模型标识符。
+
+---
+
+## 十六、Cron定时系统——会话级的后台调度
+
+```
+CronCreate
+    │
+    │  参数：cron表达式（5字段标准格式）、prompt、recurring标志
+    │  示例："7 * * * *" → 每小时第7分钟执行
+    │
+    ▼
+后台调度器
+    │
+    ├─ 仅在REPL空闲时触发（不中断正在进行的对话）
+    ├─ recurring=true → 持续执行直到删除或3天自动过期
+    ├─ recurring=false → 执行一次后自动删除（one-shot提醒）
+    ├─ 内置jitter抖动 → 避免所有用户请求同时到达API
+    │
+    ▼
+CronList / CronDelete → 查看和管理定时任务
+```
+
+**设计约束**：Cron任务仅存活于当前会话，不写入磁盘。会话结束即消失。这是有意的设计——避免用户忘记的定时任务在后台无限消耗资源。
+
+---
+
+## 十七、Worktree隔离——Git级别的工程隔离
+
+```
+主项目工作目录
+    │
+    │  EnterWorktree(name: "feature-x")
+    │
+    ▼
+.claude/worktrees/feature-x/          ← 独立的git worktree
+    │
+    ├─ 独立的分支（基于HEAD创建）
+    ├─ 独立的工作目录
+    ├─ Agent在此目录中工作，不影响主项目
+    ├─ 支持 sparse-checkout（大monorepo只检出必要目录）
+    │
+    │  ExitWorktree(action: "keep" | "remove")
+    │
+    ▼
+keep → 保留worktree和分支，后续可恢复
+remove → 清理worktree和分支（有未提交变更时需确认）
+```
+
+**Worktree + Agent的组合模式**：Agent工具支持`isolation: "worktree"`参数，让子Agent在独立的worktree中工作。这样主Agent的工作目录不受子Agent影响，多个子Agent可以并行修改不同分支。
+
+---
+
+## 十八、Remote Session与IDE集成
+
+### 18.1 Remote Control
+
+```
+本地终端                           远程服务
+    │                                │
+    │  claude --remote               │
+    │  ─────────────────────────────→│
+    │                                │  Web UI渲染
+    │  ←─────────────────────────────│  会话状态云端镜像
+    │                                │  跨设备同步
+    │  会话持久化到云端                │
+    │  --resume 从任意设备恢复        │
+    │                                │
+```
+
+### 18.2 VSCode集成
+
+Claude Code在VSCode中不是"插件"，而是**一级集成**：
+
+- **Session历史**：左侧栏加载历史会话，一键恢复
+- **Diff视图**：Agent修改的文件直接在编辑器中显示diff
+- **Effort指示器**：输入框边框颜色反映当前推理深度
+- **Rate limit可视化**：进度条+重置时间
+- **Rewind Picker**：Esc-twice打开对话回退选择器
+- **Fork from here**：从历史某个点分叉出新会话
+
+### 18.3 Voice Mode
+
+```
+按住说话（push-to-talk）
+    │
+    ▼
+SoX音频捕获 → WebSocket streaming → 语音识别
+    │
+    ▼
+文本进入Agent循环（等同于手动输入）
+```
+
+---
+
+## 十九、OpenTelemetry可观测性
+
+Claude Code内置完整的OpenTelemetry集成，覆盖traces、metrics、logs三大支柱：
+
+| 维度 | 采集内容 | 配置 |
+|------|---------|------|
+| **Events** | tool_decision, tool_result, speed属性 | 自动采集 |
+| **Resources** | os.type, os.version, host.arch, wsl.version | 自动采集 |
+| **Metrics** | Active Time, token消耗估算, 思考块时长 | 自动采集 |
+| **传输** | OTLP over HTTP/gRPC, mTLS支持 | OTEL_*_EXPORTER环境变量 |
+| **安全** | 工具参数默认不记录 | `OTEL_LOG_TOOL_DETAILS=1`显式开启 |
 
 Claude Code的11+个官方插件展示了不同的架构模式，对插件开发有直接参考价值：
 
@@ -761,7 +1211,7 @@ Claude Code的11+个官方插件展示了不同的架构模式，对插件开发
 
 ---
 
-## 十、与传统AI编程工具的架构对比
+## 二十、与传统AI编程工具的架构对比
 
 | 维度 | Copilot/Cursor | Claude Code |
 |------|---------------|-------------|
@@ -782,7 +1232,7 @@ Claude Code的11+个官方插件展示了不同的架构模式，对插件开发
 
 ---
 
-## 十一、架构的局限性与演进方向
+## 二十一、架构的局限性与演进方向
 
 不回避问题。Claude Code当前架构有三个结构性限制：
 
