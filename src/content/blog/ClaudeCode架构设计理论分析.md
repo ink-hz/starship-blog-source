@@ -14,57 +14,204 @@ tags: ['AI技术', '架构设计']
 ## 系统架构总览
 
 ```
-╔══════════════════════════════════════════════════════════════════════════╗
-║                    Claude Code 系统架构总览                               ║
-╠══════════════════════════════════════════════════════════════════════════╣
-║                                                                        ║
-║  ┌─ 用户交互层 ──────────────────────────────────────────────────────┐ ║
-║  │  终端CLI · VSCode集成 · Remote Control · Voice Mode · SDK/API    │ ║
-║  └────────────────────────────┬──────────────────────────────────────┘ ║
-║                               │                                        ║
-║                               ▼                                        ║
-║  ┌─ 事件钩子层（19个标准事件）──────────────────────────────────────┐  ║
-║  │  SessionStart → UserPromptSubmit → PreToolUse → PostToolUse     │  ║
-║  │  → PreCompact → PostCompact → Stop → SubagentStop → SessionEnd  │  ║
-║  │  → PermissionDenied → CwdChanged → FileChanged → Notification   │  ║
-║  │  → TaskCreated → TeammateIdle → TaskCompleted → StopFailure     │  ║
-║  │  → Elicitation → ElicitationResult                              │  ║
-║  └────────────────────────────┬──────────────────────────────────────┘ ║
-║                               │                                        ║
-║                               ▼                                        ║
-║  ┌─ Agent 循环引擎 ─────────────────────────────────────────────────┐ ║
-║  │                                                                   │ ║
-║  │   LLM推理层 ──→ 权限检查 ──→ 工具执行 ──→ 结果回传 ──→ 循环    │ ║
-║  │       │                                                           │ ║
-║  │       │         ┌─────────────────────────────┐                  │ ║
-║  │       └────────→│  多Agent调度                 │                  │ ║
-║  │                 │  SubAgent · Teammate · Task  │                  │ ║
-║  │                 └─────────────────────────────┘                  │ ║
-║  └────────────────────────────┬──────────────────────────────────────┘ ║
-║                               │                                        ║
-║          ┌────────────────────┼──────────────────────┐                ║
-║          ▼                    ▼                      ▼                ║
-║  ┌─ 工具层 ────┐   ┌─ 安全层 ─────────┐   ┌─ 上下文层 ─────────┐  ║
-║  │              │   │                   │   │                     │  ║
-║  │  内置工具     │   │  L5 企业策略      │   │  CLAUDE.md 层级    │  ║
-║  │  Read/Write  │   │  L4 沙箱隔离      │   │  Skill 三级加载    │  ║
-║  │  Edit/Bash   │   │  L3 工具权限      │   │  Memory 跨会话     │  ║
-║  │  Grep/Glob   │   │  L2 Hook拦截     │   │  ToolSearch 脱延   │  ║
-║  │  Web/Agent   │   │  L1 用户确认      │   │  Compaction 压缩   │  ║
-║  │              │   │                   │   │  Prompt Cache      │  ║
-║  │  MCP工具     │   └───────────────────┘   └─────────────────────┘  ║
-║  │  stdio/SSE   │                                                     ║
-║  │  HTTP/WS     │   ┌─ 持久化层 ────────────────────────────────┐    ║
-║  │              │   │  Transcript(JSONL) · Session Resume        │    ║
-║  │  Cron定时    │   │  Memory Files · Task State · Plugin Data   │    ║
-║  │  Worktree    │   │  Cron Jobs · Worktree · settings.json      │    ║
-║  └──────────────┘   └───────────────────────────────────────────┘    ║
-║                                                                        ║
-║  ┌─ 插件生态层 ─────────────────────────────────────────────────────┐ ║
-║  │  Commands(斜杠命令) · Agents(子代理) · Skills(知识注入)          │ ║
-║  │  Hooks(事件拦截) · MCP Servers(外部工具) · Plugin Marketplace    │ ║
-║  └──────────────────────────────────────────────────────────────────┘ ║
-╚══════════════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                      Claude Code 系统架构总览                                ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                            ║
+║  ┌─ 配置系统 ────────────────────────────────────────────────────────────┐║
+║  │  managed-settings.json(企业) → settings.json(用户) →                 │║
+║  │  settings.local.json(项目本地) · managed-settings.d/(策略分片)        │║
+║  └───────────────────────────────────────────────────────────────────────┘║
+║                                                                            ║
+║  ┌─ 用户交互层 ────────────────────────────────────────────────────────┐ ║
+║  │  终端CLI · VSCode集成 · Remote Control · Voice Mode · SDK/API      │ ║
+║  │  交互模式：Auto / Plan / Fast / Headless / Bare                     │ ║
+║  └────────────────────────────────┬─────────────────────────────────────┘ ║
+║                                   │                                        ║
+║ ◆═══════════════════════════════════════════════════════════════════════◆  ║
+║ ║           事件钩子层（19个标准事件，环绕整个Agent生命周期）              ║  ║
+║ ║                                                                       ║  ║
+║ ║  会话级：SessionStart · SessionEnd · UserPromptSubmit                 ║  ║
+║ ║  工具级：PreToolUse · PostToolUse · PermissionDenied                  ║  ║
+║ ║  压缩级：PreCompact · PostCompact                                     ║  ║
+║ ║  退出级：Stop · SubagentStop · StopFailure                           ║  ║
+║ ║  环境级：CwdChanged · FileChanged · Notification                     ║  ║
+║ ║  任务级：TaskCreated · TeammateIdle · TaskCompleted                   ║  ║
+║ ║  MCP级：Elicitation · ElicitationResult                              ║  ║
+║ ◆═══════════════════════════════════════════════════════════════════════◆  ║
+║                                   │                                        ║
+║  ┌────────────────────────────────▼────────────────────────────────────┐  ║
+║  │                      Agent 循环引擎                                  │  ║
+║  │                                                                      │  ║
+║  │   LLM推理 ──→ 权限决策树 ──→ 工具执行 ──→ 结果回传 ──→ 循环       │  ║
+║  │       │                                                              │  ║
+║  │       └──→ 多Agent编排 ─┬─ SubAgent（主循环内，共享上下文）          │  ║
+║  │                         ├─ Teammate（独立进程，完全隔离）             │  ║
+║  │                         └─ Task（后台循环，可监控统计）               │  ║
+║  └──────────┬──────────────────────┬──────────────────┬────────────────┘  ║
+║             │                      │                  │                    ║
+║             ▼                      ▼                  ▼                    ║
+║  ┌─ 工具层 ──────────┐  ┌─ 权限决策树 ─────┐  ┌─ 上下文层 ──────────┐  ║
+║  │                    │  │                   │  │                      │  ║
+║  │  核心工具（预加载）  │  │  企业策略(最高)   │  │  CLAUDE.md 多层级    │  ║
+║  │  Read · Write      │  │      ↓            │  │  Skill 三级加载      │  ║
+║  │  Edit · MultiEdit  │  │  权限规则匹配     │  │  Memory 跨会话记忆   │  ║
+║  │  Bash · PowerShell │  │      ↓            │  │  Extended Thinking   │  ║
+║  │  Grep · Glob       │  │  Auto Mode分类器  │  │  ToolSearch 脱延管理 │  ║
+║  │  WebFetch/Search   │  │      ↓            │  │  Compaction 自动压缩 │  ║
+║  │  Agent · Skill     │  │  PreToolUse Hook  │  │  Prompt Cache 系统   │  ║
+║  │  Task* 工具族      │  │  (defer/allow/    │  │  大输出外溢(>50KB    │  ║
+║  │                    │  │   ask/deny)        │  │   存磁盘+预览)       │  ║
+║  │  MCP工具（动态）    │  │      ↓            │  │                      │  ║
+║  │  stdio · SSE       │  │  沙箱隔离(仅Bash) │  └──────────────────────┘  ║
+║  │  HTTP · WebSocket  │  │      ↓            │                            ║
+║  │  OAuth自动认证      │  │  用户确认(最终)   │                            ║
+║  │                    │  │                   │                            ║
+║  │  ToolSearch（按需） │  └───────────────────┘                            ║
+║  │  脱延加载/释放      │                                                   ║
+║  │                    │                                                   ║
+║  │  其他              │                                                   ║
+║  │  Cron · Worktree   │                                                   ║
+║  └────────────────────┘                                                   ║
+║                                                                            ║
+║  ┌─ 持久化层 ─────────────────────────────────────────────────────────┐  ║
+║  │  会话级：Transcript(JSONL) · Session Resume · Task State           │  ║
+║  │  全局级：Memory Files · History · Cron Jobs · Worktree             │  ║
+║  │  配置级：settings.json层级 · Plugin Data · Hook输出大文件           │  ║
+║  └────────────────────────────────────────────────────────────────────┘  ║
+║                                                                            ║
+║  ┌─ 观测系统（OpenTelemetry）────────────────────────────────────────┐  ║
+║  │  事件追踪(tool_decision) · 性能指标(Active Time) · 会话关联追踪    │  ║
+║  └────────────────────────────────────────────────────────────────────┘  ║
+║                                                                            ║
+║  ┌─ 插件生态层（贯穿多层）───────────────────────────────────────────┐  ║
+║  │  Commands → 用户交互层    Agents → Agent引擎    Skills → 上下文层  │  ║
+║  │  Hooks → 事件钩子层       MCP Servers → 工具层                     │  ║
+║  │  Plugin Marketplace · 版本管理 · 企业策略管控                       │  ║
+║  └────────────────────────────────────────────────────────────────────┘  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+### 系统架构交互图（Mermaid版）
+
+```mermaid
+graph TB
+    subgraph CONFIG [配置系统]
+        direction LR
+        C1["managed-settings.json<br/>(企业策略·最高优先级)"] --> C2["settings.json<br/>(用户全局)"]
+        C2 --> C3["settings.local.json<br/>(项目本地·不入库)"]
+    end
+
+    subgraph UI [用户交互层]
+        direction LR
+        U1["终端CLI"] --> U2["VSCode集成"]
+        U2 --> U3["Remote Control"]
+        U3 --> U4["Voice Mode"]
+        U4 --> U5["SDK/API"]
+        U6["交互模式：Auto / Plan / Fast / Headless / Bare"]
+    end
+
+    subgraph HOOKS [事件钩子层 · 19个标准事件 · 环绕整个Agent生命周期]
+        direction TB
+        H1["会话级<br/>SessionStart · SessionEnd<br/>UserPromptSubmit"]
+        H2["工具级<br/>PreToolUse · PostToolUse<br/>PermissionDenied"]
+        H3["压缩级<br/>PreCompact · PostCompact"]
+        H4["退出级<br/>Stop · SubagentStop · StopFailure"]
+        H5["环境级<br/>CwdChanged · FileChanged<br/>Notification"]
+        H6["任务级<br/>TaskCreated · TeammateIdle<br/>TaskCompleted"]
+        H7["MCP级<br/>Elicitation · ElicitationResult"]
+    end
+
+    subgraph ENGINE [Agent循环引擎]
+        direction TB
+        E1["LLM推理层<br/>意图理解·任务规划·工具选择"] --> E2["权限决策树<br/>企业策略→规则匹配→Auto分类器<br/>→Hook拦截→沙箱(仅Bash)→用户确认"]
+        E2 --> E3["工具执行层"]
+        E3 --> E4["结果回传→重新进入推理层"]
+        E4 --> E1
+
+        subgraph AGENTS [多Agent编排]
+            direction LR
+            A1["SubAgent<br/>主循环内·共享上下文"] --> A2["Teammate<br/>独立进程·完全隔离"]
+            A2 --> A3["Task<br/>后台循环·可监控"]
+        end
+
+        E1 --> AGENTS
+    end
+
+    subgraph TOOLS [工具层]
+        direction TB
+        subgraph BUILTIN [核心工具·预加载]
+            direction LR
+            T1["Read · Write · Edit<br/>MultiEdit · Bash<br/>PowerShell"]
+            T2["Grep · Glob<br/>WebFetch · WebSearch"]
+            T3["Agent · Skill<br/>Task*工具族<br/>Cron · Worktree"]
+        end
+        subgraph MCP_T [MCP工具·动态加载]
+            direction LR
+            M1["stdio服务器"] --> M2["SSE服务器<br/>(OAuth自动)"]
+            M2 --> M3["HTTP/WS服务器"]
+        end
+        subgraph DEFERRED [ToolSearch·按需加载]
+            TS1["MCP工具描述>10%上下文<br/>→自动脱延<br/>DORMANT→LOADED→RESOLVED"]
+        end
+    end
+
+    subgraph CONTEXT [上下文管理层]
+        direction TB
+        CT1["CLAUDE.md 多层级加载<br/>全局→项目→子目录→本地"]
+        CT2["Skill 三级渐进加载<br/>元数据→SKILL.md→references"]
+        CT3["Memory 跨会话记忆<br/>MEMORY.md索引·四种类型"]
+        CT4["Extended Thinking<br/>Effort: low/medium/high"]
+        CT5["Compaction 自动压缩<br/>断路器·状态保留·PreCompact Hook"]
+        CT6["Prompt Cache 系统<br/>系统提示·CLAUDE.md·工具Schema"]
+        CT7["大输出管理<br/>>50KB存磁盘+预览注入"]
+    end
+
+    subgraph PERSIST [持久化层]
+        direction LR
+        P1["会话级<br/>Transcript JSONL<br/>Session Resume<br/>Task State"]
+        P2["全局级<br/>Memory Files<br/>History · Cron Jobs<br/>Worktree"]
+        P3["配置级<br/>settings.json层级<br/>Plugin Data<br/>Hook输出大文件"]
+    end
+
+    subgraph OTEL [观测系统 · OpenTelemetry]
+        direction LR
+        O1["事件追踪<br/>tool_decision · tool_result"] --> O2["性能指标<br/>Active Time · Speed"]
+        O2 --> O3["会话关联<br/>X-Claude-Code-Session-Id"]
+    end
+
+    subgraph PLUGINS [插件生态层 · 贯穿多层]
+        direction LR
+        PL1["Commands<br/>→用户交互层"]
+        PL2["Agents<br/>→Agent引擎"]
+        PL3["Skills<br/>→上下文层"]
+        PL4["Hooks<br/>→事件钩子层"]
+        PL5["MCP Servers<br/>→工具层"]
+        PL6["Marketplace<br/>版本管理·企业管控"]
+    end
+
+    CONFIG --> UI
+    UI --> HOOKS
+    HOOKS --> ENGINE
+    ENGINE --> TOOLS
+    ENGINE --> CONTEXT
+    TOOLS --> PERSIST
+    CONTEXT --> PERSIST
+    OTEL -.->|"采集全链路指标"| ENGINE
+    PLUGINS -.->|"扩展各层能力"| ENGINE
+    PLUGINS -.->|"扩展各层能力"| TOOLS
+    PLUGINS -.->|"扩展各层能力"| CONTEXT
+    PLUGINS -.->|"扩展各层能力"| HOOKS
+
+    style CONFIG fill:#1a1a2e,stroke:#e94560,color:#eee
+    style UI fill:#0f3460,stroke:#e94560,color:#eee
+    style HOOKS fill:#16213e,stroke:#0f3460,color:#e94560
+    style ENGINE fill:#1a1a2e,stroke:#533483,color:#eee
+    style TOOLS fill:#0c2340,stroke:#3b82f6,color:#93c5fd
+    style CONTEXT fill:#1a0f2e,stroke:#8b5cf6,color:#c4b5fd
+    style PERSIST fill:#0d2818,stroke:#10b981,color:#6ee7b7
+    style OTEL fill:#2d1f0e,stroke:#f59e0b,color:#fde68a
+    style PLUGINS fill:#2a0f1a,stroke:#ec4899,color:#f9a8d4
 ```
 
 ## 一、AI编程助手的本质：从补全到自主
