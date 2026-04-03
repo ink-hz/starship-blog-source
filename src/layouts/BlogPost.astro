@@ -129,6 +129,7 @@ const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.prop
     overflow-x: auto;
     margin: 1rem 0;
     border: 1px solid var(--border);
+    max-width: 100%;
   }
 
   .prose :global(pre code) {
@@ -180,6 +181,8 @@ const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.prop
     background: var(--surface);
     border-radius: 8px;
     overflow: hidden;
+    display: block;
+    overflow-x: auto;
   }
 
   .prose :global(th) {

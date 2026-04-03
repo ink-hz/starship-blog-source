@@ -12,7 +12,7 @@ const { title, description } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
@@ -35,6 +35,10 @@ const { title, description } = Astro.props;
         box-sizing: border-box;
       }
 
+      html {
+        overflow-x: hidden;
+      }
+
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         background: var(--bg);
@@ -43,6 +47,7 @@ const { title, description } = Astro.props;
         font-size: 16px;
         min-height: 100vh;
         position: relative;
+        overflow-x: hidden;
       }
 
       body::before {
@@ -195,46 +200,67 @@ const { title, description } = Astro.props;
             const mermaidDiv = document.createElement('div');
             mermaidDiv.className = 'mermaid';
             mermaidDiv.textContent = code;
+            // 创建外层滚动容器
+            const wrapper = document.createElement('div');
+            wrapper.style.overflowX = 'auto';
+            wrapper.style.margin = '20px 0';
+            wrapper.style.borderRadius = '8px';
+            wrapper.style.cursor = 'grab';
+            wrapper.style.maxWidth = '100%';
+            wrapper.style.WebkitOverflowScrolling = 'touch';
+
             mermaidDiv.style.backgroundColor = '#1a2332';
             mermaidDiv.style.padding = '20px';
             mermaidDiv.style.borderRadius = '8px';
-            mermaidDiv.style.margin = '20px 0';
-            mermaidDiv.style.overflowX = 'auto';
-            mermaidDiv.style.cursor = 'grab';
-            mermaidDiv.style.width = '100%';
             mermaidDiv.style.minWidth = '1200px';
+            mermaidDiv.style.width = 'max-content';
 
-            // 添加鼠标拖拽功能
+            wrapper.appendChild(mermaidDiv);
+
+            // 添加鼠标拖拽功能（绑定到wrapper）
             let isDragging = false;
             let startX, scrollLeft;
 
-            mermaidDiv.addEventListener('mousedown', (e) => {
+            wrapper.addEventListener('mousedown', (e) => {
               isDragging = true;
-              mermaidDiv.style.cursor = 'grabbing';
-              startX = e.pageX - mermaidDiv.offsetLeft;
-              scrollLeft = mermaidDiv.scrollLeft;
+              wrapper.style.cursor = 'grabbing';
+              startX = e.pageX - wrapper.offsetLeft;
+              scrollLeft = wrapper.scrollLeft;
             });
 
-            mermaidDiv.addEventListener('mouseleave', () => {
+            wrapper.addEventListener('mouseleave', () => {
               isDragging = false;
-              mermaidDiv.style.cursor = 'grab';
+              wrapper.style.cursor = 'grab';
             });
 
-            mermaidDiv.addEventListener('mouseup', () => {
+            wrapper.addEventListener('mouseup', () => {
               isDragging = false;
-              mermaidDiv.style.cursor = 'grab';
+              wrapper.style.cursor = 'grab';
             });
 
-            mermaidDiv.addEventListener('mousemove', (e) => {
+            wrapper.addEventListener('mousemove', (e) => {
               if (!isDragging) return;
               e.preventDefault();
-              const x = e.pageX - mermaidDiv.offsetLeft;
+              const x = e.pageX - wrapper.offsetLeft;
               const walk = (x - startX) * 2;
-              mermaidDiv.scrollLeft = scrollLeft - walk;
+              wrapper.scrollLeft = scrollLeft - walk;
             });
 
+            // 触摸拖拽支持（移动端）
+            let touchStartX;
+            wrapper.addEventListener('touchstart', (e) => {
+              touchStartX = e.touches[0].pageX;
+              scrollLeft = wrapper.scrollLeft;
+            }, {passive: true});
+
+            wrapper.addEventListener('touchmove', (e) => {
+              const x = e.touches[0].pageX;
+              const walk = (touchStartX - x);
+              wrapper.scrollLeft = scrollLeft + walk;
+            }, {passive: true});
+
             // 替换原来的 pre 标签
-            block.parentElement.replaceWith(mermaidDiv);
+            block.parentElement.replaceWith(wrapper);
           }
         });
 
