@@ -24,7 +24,6 @@ const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.prop
               </span>
             )
           }
-          <span class="views">· <span id="view-count">--</span> 次阅读</span>
         </div>
         {tags && (
           <div class="tags">
@@ -66,11 +65,6 @@ const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.prop
 
   .updated {
     margin-left: 1rem;
-  }
-
-  .views {
-    margin-left: 1rem;
-    color: var(--gray);
   }
 
   .tags {
@@ -216,29 +210,3 @@ const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.prop
     margin: 2rem 0;
   }
 </style>
-
-<script>
-  const WEBSITE_ID = '2e00f6da-a72d-4e34-a1fc-e13aaa0aca06';
-  const API_KEY = 'api_X8KXEbt30WELEOjGWCTcLezGb9dbcW5H';
-
-  async function loadViewCount() {
-    const url = window.location.pathname;
-    const now = Date.now();
-    const start = new Date('2026-01-01').getTime();
-    const endpoint = `https://api.umami.is/v1/websites/${WEBSITE_ID}/metrics?type=url&startAt=${start}&endAt=${now}&url=${encodeURIComponent(url)}`;
-
-    try {
-      const res = await fetch(endpoint, {
-        headers: { 'x-umami-api-key': API_KEY }
-      });
-      const data = await res.json();
-      const count = data.find((item) => item.x === url)?.y ?? 0;
-      const el = document.getElementById('view-count');
-      if (el) el.textContent = count.toLocaleString('zh-CN');
-    } catch (e) {
-      // 静默失败，保持 '--'
-    }
-  }
-
-  loadViewCount();
-</script>
