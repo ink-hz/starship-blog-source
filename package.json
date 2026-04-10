@@ -9,7 +9,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "deploy": "astro build && cd dist && git init && git add -A && git commit -m 'Deploy' && git push -f git@github.com:ink-hz/ink-hz.github.io.git main"
+    "deploy": "astro build && cd dist && git init && git checkout -b main && git add -A && git commit -m 'Deploy' && git push -f git@github.com:ink-hz/ink-hz.github.io.git main"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.13",
