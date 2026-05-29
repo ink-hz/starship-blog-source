@@ -15,6 +15,10 @@ sortedPosts.forEach(post => {
   });
 });
 const allTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).map(([tag]) => tag);
+const slugOverrides: Record<string, string> = {
+  '交易圣经top5-五本书提炼出的股票交易核心心法': '交易圣经TOP5-五本书提炼出的股票交易核心心法',
+};
+const getPostSlug = (slug: string) => slugOverrides[slug] ?? slug;
 ---
 
 <BaseLayout title="博客文章" description="所有技术博客文章">
@@ -32,7 +36,7 @@ const allTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).map(([tag])
   <ul class="post-list" id="post-list">
     {sortedPosts.map((post) => (
       <li class="post-item" data-tags={post.data.tags?.join(',') ?? ''}>
-        <a href={`/blog/${post.slug}/`}>
+        <a href={`/blog/${getPostSlug(post.slug)}/`}>
           <h2>{post.data.title}</h2>
           <p class="description">{post.data.description}</p>
           <div class="meta">

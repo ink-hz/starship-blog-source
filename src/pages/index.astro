@@ -7,6 +7,10 @@ const sortedPosts = allPosts
   .filter(post => !post.data.draft)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 const recentPosts = sortedPosts.slice(0, 5);
+const slugOverrides: Record<string, string> = {
+  '交易圣经top5-五本书提炼出的股票交易核心心法': '交易圣经TOP5-五本书提炼出的股票交易核心心法',
+};
+const getPostSlug = (slug: string) => slugOverrides[slug] ?? slug;
 ---
 
 <BaseLayout
@@ -26,7 +30,7 @@ const recentPosts = sortedPosts.slice(0, 5);
     <ul class="post-list">
       {recentPosts.map((post) => (
         <li class="post-item">
-          <a href={`/blog/${post.slug}/`}>
+          <a href={`/blog/${getPostSlug(post.slug)}/`}>
             <h3>{post.data.title}</h3>
             <p class="description">{post.data.description}</p>
             <time>{post.data.pubDate.toLocaleDateString('zh-CN')}</time>

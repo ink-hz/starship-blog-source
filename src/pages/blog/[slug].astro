@@ -4,8 +4,11 @@ import BlogPost from '../../layouts/BlogPost.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
+  const slugOverrides: Record<string, string> = {
+    '交易圣经top5-五本书提炼出的股票交易核心心法': '交易圣经TOP5-五本书提炼出的股票交易核心心法',
+  };
   return posts.map((post) => ({
-    params: { slug: post.slug },
+    params: { slug: slugOverrides[post.slug] ?? post.slug },
     props: post,
   }));
 }
